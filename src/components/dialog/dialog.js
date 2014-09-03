@@ -4,7 +4,8 @@
  */
 angular.module('material.components.dialog', [
   'material.animations',
-  'material.services.compiler'
+  'material.services.compiler',
+  'material.services.aria'
 ])
   .directive('materialDialog', [
     '$$rAF',
@@ -17,6 +18,7 @@ angular.module('material.components.dialog', [
     '$rootScope',
     '$materialEffects',
     '$animate',
+    '$aria',
     MaterialDialogService
   ]);
 
@@ -61,7 +63,7 @@ function MaterialDialogDirective($$rAF) {
  * <div ng-controller="MyController">
  *   <material-button ng-click="openDialog($event)">
  *     Open a Dialog from this button!
- *   </material-dialog>
+ *   </material-button>
  * </div>
  * </hljs>
  * <hljs lang="js">
@@ -102,7 +104,7 @@ function MaterialDialogDirective($$rAF) {
  * @param {element=} appendTo The element to append the dialog to. Defaults to appending
  *   to the root element of the application.
  */
-function MaterialDialogService($timeout, $materialCompiler, $rootElement, $rootScope, $materialEffects, $animate) {
+function MaterialDialogService($timeout, $materialCompiler, $rootElement, $rootScope, $materialEffects, $animate, $aria) {
   var recentDialog;
   var dialogParent = $rootElement.find('body');
   if ( !dialogParent.length ) {
@@ -143,6 +145,14 @@ function MaterialDialogService($timeout, $materialCompiler, $rootElement, $rootS
         angular.element(options.targetEvent.target);
       var closeButton = findCloseButton();
       var backdrop;
+      var triggeringElement;
+
+      configureAria(element.find('material-dialog'));
+
+      if(options.targetEvent !== null){
+        // Store the triggering element so focus can be sent back to it
+        triggeringElement = angular.element(options.targetEvent.currentTarget);
+      }
 
       if (options.hasBackdrop) {
         backdrop = angular.element('<material-backdrop class="opaque ng-enter">');
@@ -188,6 +198,10 @@ function MaterialDialogService($timeout, $materialCompiler, $rootElement, $rootS
           scope.$destroy();
           scope = null;
           element = null;
+
+          if(triggeringElement !== undefined) {
+            triggeringElement.focus();
+          }
         });
       }
       function onRootElementKeyup(e) {
@@ -202,6 +216,19 @@ function MaterialDialogService($timeout, $materialCompiler, $rootElement, $rootS
         }
       }
     });
+
+    /**
+     * Inject ARIA-specific attributes appropriate for Dialogs
+     */
+    function configureAria(element) {
+      var ROLE = Constant.ARIA.ROLE;
+
+      $aria.update(element, {
+        'role': ROLE.DIALOG
+      });
+
+      $aria.expect(element, 'aria-label', element.text().split(/\s+/).slice(1,4).join(" "));
+    }
 
     return recentDialog;
   }

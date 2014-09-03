@@ -14,7 +14,7 @@ describe('$materialDialog', function() {
 
   it('should append dialog with container', inject(function($materialDialog, $rootScope) {
 
-    var template = '<material-dialog>Hello</material-dialog>';
+    var template = '<material-dialog role="dialog" aria-label="Hello">Hello</material-dialog>';
     var parent = angular.element('<div>');
 
     $materialDialog({
